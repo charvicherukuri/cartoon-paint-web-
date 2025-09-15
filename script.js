@@ -1,6 +1,6 @@
 let cartoonImage, paintImage;
-
-document.getElementById('upload').addEventListener('change', function (e) {
+cv['onRuntimeInitialized'] = () => {
+    document.getElementById('upload').addEventListener('change', function (e)  {
   let file = e.target.files[0];
   if (!file) return;
 
