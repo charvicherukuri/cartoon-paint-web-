@@ -1,38 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>🎨 Cartoon + Paint Effect</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartoon & Paint Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+  body { font-family: Arial; text-align: center; padding: 20px; background: #f5f5f5; }
+  img { max-width: 300px; margin: 10px; border: 2px solid #333; }
+  button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+</style>
 </head>
 <body>
-  <h1>Cartoon + Paint-like Image Generator</h1>
 
-  <!-- Step 1: Upload image -->
-  <input type="file" id="upload" accept="image/*"><br><br>
+<h2>Cartoon & Paint-like Generator</h2>
+<input type="file" id="upload" accept="image/*"><br>
+<button id="generateBtn" style="display:none;">Generate</button>
 
-  <!-- Step 2: Original image canvas -->
-  <canvas id="canvas"></canvas><br><br>
+<div id="images"></div>
+<button id="downloadZip" style="display:none;">Download ZIP</button>
 
-  <!-- Step 3: Generate button -->
-  <button id="generate" style="display:none;">Generate Cartoon & Paint</button><br><br>
+<script>
+let originalImg = null;
+let cartoonCanvas = null;
+let paintCanvas = null;
 
-  <!-- Step 4: Output images -->
-  <div id="output"></div><br>
+function quantizeImage(ctx, width, height, clusters=9) {
+    // Simple color quantization approximation using Canvas
+    let imgData = ctx.getImageData(0,0,width,height);
+    let data = imgData.data;
+    for (let i=0; i<data.length; i+=4) {
+        data[i] = Math.floor(data[i]/32)*32;     // R
+        data[i+1] = Math.floor(data[i+1]/32)*32; // G
+        data[i+2] = Math.floor(data[i+2]/32)*32; // B
+    }
+    ctx.putImageData(imgData,0,0);
+}
 
-  <!-- Step 5: Download buttons -->
-  <div class="buttons">
-    <button id="download-cartoon">Download Cartoon</button>
-    <button id="download-paint">Download Paint-like</button>
-    <button id="download-zip">Download Both (ZIP)</button>
-  </div>
+function smoothImage(ctx, width, height) {
+    // Simple blur as paint-like effect
+    ctx.globalAlpha = 0.5;
+    for(let y=-1; y<=1; y++){
+        for(let x=-1; x<=1; x++){
+            ctx.drawImage(ctx.canvas, x, y, width, height);
+        }
+    }
+    ctx.globalAlpha = 1.0;
+}
 
-  <!-- JS Libraries -->
-  <script src="opencv.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+document.getElementById('upload').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(event){
+        const img = new Image();
+        img.onload = function(){
+            originalImg = img;
+            document.getElementById('images').innerHTML = `<h3>Original</h3>`;
+            document.getElementById('images').appendChild(img);
+            document.getElementById('generateBtn').style.display = 'inline-block';
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(file);
+});
 
-  <!-- Main Script -->
-  <script src="script.js"></script>
+document.getElementById('generateBtn').addEventListener('click', function(){
+    if(!originalImg) return;
+    
+    const width = originalImg.width;
+    const height = originalImg.height;
+
+    // Cartoon Canvas
+    cartoonCanvas = document.createElement('canvas');
+    cartoonCanvas.width = width;
+    cartoonCanvas.height = height;
+    const cCtx = cartoonCanvas.getContext('2d');
+    cCtx.drawImage(originalImg,0,0);
+    quantizeImage(cCtx,width,height);
+
+    // Paint Canvas
+    paintCanvas = document.createElement('canvas');
+    paintCanvas.width = width;
+    paintCanvas.height = height;
+    const pCtx = paintCanvas.getContext('2d');
+    pCtx.drawImage(cartoonCanvas,0,0);
+    smoothImage(pCtx,width,height);
+
+    // Display results
+    const imagesDiv = document.getElementById('images');
+    imagesDiv.innerHTML = `<h3>Original</h3>`;
+    imagesDiv.appendChild(originalImg);
+    imagesDiv.innerHTML += `<h3>Cartoon</h3>`;
+    imagesDiv.appendChild(cartoonCanvas);
+    imagesDiv.innerHTML += `<h3>Paint-like</h3>`;
+    imagesDiv.appendChild(paintCanvas);
+
+    document.getElementById('downloadZip').style.display = 'inline-block';
+});
+
+document.getElementById('downloadZip').addEventListener('click', function(){
+    const zip = new JSZip();
+    zip.file("cartoon.png", cartoonCanvas.toDataURL().split(",")[1], {base64: true});
+    zip.file("paint.png", paintCanvas.toDataURL().split(",")[1], {base64: true});
+    zip.generateAsync({type:"blob"}).then(function(content){
+        saveAs(content,"cartoon_results.zip");
+    });
+});
+</script>
 </body>
 </html>
