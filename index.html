@@ -7,9 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
-  body { font-family: Arial; text-align: center; padding: 20px; background: #f5f5f5; }
-  img { max-width: 300px; margin: 10px; border: 2px solid #333; }
-  button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+body { font-family: Arial; text-align: center; padding: 20px; background: #f5f5f5; }
+img, canvas { max-width: 300px; margin: 10px; border: 2px solid #333; }
+button { padding: 10px 20px; margin: 10px; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -26,20 +26,39 @@ let originalImg = null;
 let cartoonCanvas = null;
 let paintCanvas = null;
 
-function quantizeImage(ctx, width, height, clusters=9) {
-    // Simple color quantization approximation using Canvas
-    let imgData = ctx.getImageData(0,0,width,height);
-    let data = imgData.data;
-    for (let i=0; i<data.length; i+=4) {
-        data[i] = Math.floor(data[i]/32)*32;     // R
-        data[i+1] = Math.floor(data[i+1]/32)*32; // G
-        data[i+2] = Math.floor(data[i+2]/32)*32; // B
+function posterize(ctx, width, height, levels=8) {
+    const imgData = ctx.getImageData(0,0,width,height);
+    const data = imgData.data;
+    const step = 255 / (levels-1);
+    for(let i=0; i<data.length; i+=4){
+        data[i] = Math.floor(data[i]/step)*step;      // R
+        data[i+1] = Math.floor(data[i+1]/step)*step;  // G
+        data[i+2] = Math.floor(data[i+2]/step)*step;  // B
     }
     ctx.putImageData(imgData,0,0);
 }
 
-function smoothImage(ctx, width, height) {
-    // Simple blur as paint-like effect
+function edgeDetect(ctx, width, height) {
+    const imgData = ctx.getImageData(0,0,width,height);
+    const data = imgData.data;
+    const copy = new Uint8ClampedArray(data);
+    for(let y=1; y<height-1; y++){
+        for(let x=1; x<width-1; x++){
+            const i = (y*width + x)*4;
+            const gx = 
+                -copy[((y-1)*width + (x-1))*4] - 2*copy[(y*width + (x-1))*4] - copy[((y+1)*width + (x-1))*4]
+                + copy[((y-1)*width + (x+1))*4] + 2*copy[(y*width + (x+1))*4] + copy[((y+1)*width + (x+1))*4];
+            const gy = 
+                -copy[((y-1)*width + (x-1))*4] - 2*copy[((y-1)*width + x)*4] - copy[((y-1)*width + (x+1))*4]
+                + copy[((y+1)*width + (x-1))*4] + 2*copy[((y+1)*width + x)*4] + copy[((y+1)*width + (x+1))*4];
+            const val = Math.min(255, Math.sqrt(gx*gx + gy*gy));
+            data[i] = data[i+1] = data[i+2] = val > 50 ? 0 : 255; // black edges
+        }
+    }
+    ctx.putImageData(imgData,0,0);
+}
+
+function smooth(ctx, width, height) {
     ctx.globalAlpha = 0.5;
     for(let y=-1; y<=1; y++){
         for(let x=-1; x<=1; x++){
@@ -78,7 +97,8 @@ document.getElementById('generateBtn').addEventListener('click', function(){
     cartoonCanvas.height = height;
     const cCtx = cartoonCanvas.getContext('2d');
     cCtx.drawImage(originalImg,0,0);
-    quantizeImage(cCtx,width,height);
+    posterize(cCtx,width,height,9);
+    edgeDetect(cCtx,width,height);
 
     // Paint Canvas
     paintCanvas = document.createElement('canvas');
@@ -86,7 +106,7 @@ document.getElementById('generateBtn').addEventListener('click', function(){
     paintCanvas.height = height;
     const pCtx = paintCanvas.getContext('2d');
     pCtx.drawImage(cartoonCanvas,0,0);
-    smoothImage(pCtx,width,height);
+    smooth(pCtx,width,height);
 
     // Display results
     const imagesDiv = document.getElementById('images');
