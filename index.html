@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartoon + Paint Effect</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🎨 Cartoon + Paint Effect</h1>
+  <input type="file" id="upload" accept="image/*"><br><br>
+
+  <canvas id="canvas"></canvas>
+  <div class="buttons">
+    <button id="download-cartoon">Download Cartoon</button>
+    <button id="download-paint">Download Paint-like</button>
+    <button id="download-zip">Download Both (ZIP)</button>
+  </div>
+
+  <script src="opencv.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
