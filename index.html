@@ -2,23 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cartoon + Paint Effect</title>
+  <title>🎨 Cartoon + Paint Effect</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎨 Cartoon + Paint Effect</h1>
+  <h1>Cartoon + Paint-like Image Generator</h1>
+
+  <!-- Step 1: Upload image -->
   <input type="file" id="upload" accept="image/*"><br><br>
 
-  <canvas id="canvas"></canvas>
+  <!-- Step 2: Original image canvas -->
+  <canvas id="canvas"></canvas><br><br>
+
+  <!-- Step 3: Generate button -->
+  <button id="generate" style="display:none;">Generate Cartoon & Paint</button>
+
+  <!-- Step 4: Output images -->
+  <div id="output"></div>
+
+  <!-- Step 5: Download buttons -->
   <div class="buttons">
     <button id="download-cartoon">Download Cartoon</button>
     <button id="download-paint">Download Paint-like</button>
     <button id="download-zip">Download Both (ZIP)</button>
   </div>
 
+  <!-- JS Libraries -->
   <script src="opencv.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- Main Script -->
   <script src="script.js"></script>
 </body>
 </html>
