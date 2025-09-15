@@ -10,15 +10,14 @@
 <style>
 body { font-family: Arial; text-align: center; padding: 20px; background: #f5f5f5; }
 img, canvas { max-width: 300px; margin: 10px; border: 2px solid #333; }
-button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor:pointer; }
 </style>
 </head>
 <body>
 
-<h2>Cartoon & Paint-like Generator (Exact DIP)</h2>
+<h2>Cartoon & Paint-like Generator (DIP)</h2>
 <input type="file" id="upload" accept="image/*"><br>
 <button id="generateBtn" style="display:none;">Generate</button>
-
 <div id="images"></div>
 <button id="downloadZip" style="display:none;">Download ZIP</button>
 
@@ -27,9 +26,8 @@ let originalImg = null;
 let cartoonCanvas = null;
 let paintCanvas = null;
 
-// Wait for OpenCV to load
+// Wait for OpenCV.js to load
 cv['onRuntimeInitialized']=()=>{
-  console.log("OpenCV.js is ready!");
   document.getElementById('upload').addEventListener('change', function(e){
     const file = e.target.files[0];
     if(!file) return;
