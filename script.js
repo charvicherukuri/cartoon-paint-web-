@@ -1,5 +1,3 @@
-let cartoonImage, paintImage;
-
 cv['onRuntimeInitialized'] = () => {
     const uploadInput = document.getElementById('upload');
     const generateBtn = document.getElementById('generate');
