@@ -1,9 +1,12 @@
+let cartoonImage, paintImage;
+
 cv['onRuntimeInitialized'] = () => {
     const uploadInput = document.getElementById('upload');
     const generateBtn = document.getElementById('generate');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
+    // --- Upload image ---
     uploadInput.addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -20,6 +23,7 @@ cv['onRuntimeInitialized'] = () => {
         img.src = URL.createObjectURL(file);
     });
 
+    // --- Generate cartoon + paint ---
     generateBtn.addEventListener('click', function () {
         let src = cv.imread(canvas);
 
@@ -45,8 +49,9 @@ cv['onRuntimeInitialized'] = () => {
         paintImage = new cv.Mat();
         cv.bilateralFilter(cartoonImage, paintImage, 15, 100, 100);
 
-        // Display both images on canvas
-        // Here we create two smaller canvases for output
+        // Display both images
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = ""; // Clear previous results
         displayOutput(cartoonImage, 'Cartoon (Quantized)');
         displayOutput(paintImage, 'Paint-like Smooth');
 
@@ -54,7 +59,7 @@ cv['onRuntimeInitialized'] = () => {
         src.delete(); Z.delete(); labels.delete(); centers.delete();
     });
 
-    // Download buttons
+    // --- Download buttons ---
     document.getElementById("download-cartoon").onclick = function () {
         saveMatAsImage(cartoonImage, "cartoon.png");
     };
@@ -70,14 +75,18 @@ cv['onRuntimeInitialized'] = () => {
         });
     };
 
-    // Helpers
+    // --- Helper functions ---
     function displayOutput(mat, title) {
         const outputDiv = document.getElementById('output');
         const div = document.createElement('div');
+        div.style.display = "inline-block";
+        div.style.margin = "10px";
+
         const h3 = document.createElement('h3');
         h3.innerText = title;
         const canvasOut = document.createElement('canvas');
         cv.imshow(canvasOut, mat);
+
         div.appendChild(h3);
         div.appendChild(canvasOut);
         outputDiv.appendChild(div);
@@ -94,6 +103,6 @@ cv['onRuntimeInitialized'] = () => {
     function matToBlob(mat) {
         const canvasTemp = document.createElement("canvas");
         cv.imshow(canvasTemp, mat);
-        return canvasTemp.toDataURL().split(',')[1]; // Base64
+        return atob(canvasTemp.toDataURL().split(',')[1]); // Base64 → binary
     }
 };
