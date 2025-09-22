@@ -4,28 +4,33 @@
   <meta charset="UTF-8">
   <title>Cartoon & Paint Effect</title>
   <link rel="stylesheet" href="style.css">
-  <script async src="opencv.js" onload="onOpenCvReady();"></script>
 </head>
 <body>
-  <h1>🎨 Cartoon & Paint Effect</h1>
+  <h1>🎨 Cartoon & Paint Effect Generator</h1>
 
-  <input type="file" id="upload" accept="image/*"><br><br>
-  <button id="generate">Generate Effects</button>
+  <input type="file" id="fileInput" accept="image/*"><br><br>
+  <button id="generateBtn" disabled>Generate Effects</button>
+  <button id="downloadAllBtn" disabled>Download Both as ZIP</button>
 
-  <div id="output">
+  <div class="images">
     <div>
-      <h3>Cartoon</h3>
-      <canvas id="cartoonCanvas"></canvas><br>
-      <a id="downloadCartoon" download="cartoon.png">⬇️ Download Cartoon</a>
+      <h3>Original</h3>
+      <canvas id="canvasOriginal"></canvas>
     </div>
-
     <div>
       <h3>Paint-like Smooth</h3>
-      <canvas id="paintCanvas"></canvas><br>
-      <a id="downloadPaint" download="paint.png">⬇️ Download Paint</a>
+      <canvas id="canvasPaint"></canvas>
+      <a id="downloadPaint" download="paint.png">Download Paint</a>
+    </div>
+    <div>
+      <h3>Cartoon (Quantized)</h3>
+      <canvas id="canvasCartoon"></canvas>
+      <a id="downloadCartoon" download="cartoon.png">Download Cartoon</a>
     </div>
   </div>
 
+  <!-- Load OpenCV -->
+  <script async src="opencv.js" onload="onOpenCvReady()"></script>
   <script src="script.js"></script>
 </body>
 </html>
