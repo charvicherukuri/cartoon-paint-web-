@@ -1,112 +1,72 @@
-let cartoonImage, paintImage;
+let originalMat;
 
-cv['onRuntimeInitialized'] = () => {
-    const uploadInput = document.getElementById('upload');
-    const generateBtn = document.getElementById('generate');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+function onOpenCvReady() {
+  console.log("✅ OpenCV.js is ready!");
+}
 
-    // Upload image
-    uploadInput.addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
+// Load uploaded image
+document.getElementById("upload").addEventListener("change", function (e) {
+  let file = e.target.files[0];
+  let img = new Image();
+  img.onload = function () {
+    let canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
 
-        const img = new Image();
-        img.onload = function () {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+    let src = cv.imread(canvas);
+    originalMat = src.clone();
+    src.delete();
+  };
+  img.src = URL.createObjectURL(file);
+});
 
-            // Show Generate button
-            generateBtn.style.display = 'inline-block';
-        };
-        img.src = URL.createObjectURL(file);
-    });
+// Generate cartoon + paint
+document.getElementById("generate").addEventListener("click", function () {
+  if (!originalMat) {
+    alert("Please upload an image first!");
+    return;
+  }
 
-    // Generate Cartoon + Paint
-    generateBtn.addEventListener('click', function () {
-        let src = cv.imread(canvas);
+  let src = originalMat.clone();
 
-        // --- Cartoon (Quantization) ---
-        let Z = src.reshape(1, src.cols * src.rows);
-        Z.convertTo(Z, cv.CV_32F);
-        let K = 9;
-        let criteria = new cv.TermCriteria(cv.TermCriteria_EPS + cv.TermCriteria_MAX_ITER, 20, 1.0);
-        let labels = new cv.Mat(), centers = new cv.Mat();
-        cv.kmeans(Z, K, labels, criteria, 10, cv.KMEANS_RANDOM_CENTERS, centers);
+  // --- Cartoon Effect (K-means quantization) ---
+  let samples = src.reshape(1, src.rows * src.cols);
+  samples.convertTo(samples, cv.CV_32F);
+  let k = 9;
+  let criteria = new cv.TermCriteria(cv.TermCriteria_EPS + cv.TermCriteria_MAX_ITER, 20, 1.0);
+  let labels = new cv.Mat();
+  let centers = new cv.Mat();
+  cv.kmeans(samples, k, labels, criteria, 10, cv.KMEANS_RANDOM_CENTERS, centers);
 
-        centers = centers.convertTo(centers, cv.CV_8U);
-        let newImage = new cv.Mat(src.rows * src.cols, 1, src.type());
-        for (let i = 0; i < labels.rows; i++) {
-            let idx = labels.intAt(i, 0);
-            newImage.data[i * 3] = centers.data[idx * 3];
-            newImage.data[i * 3 + 1] = centers.data[idx * 3 + 1];
-            newImage.data[i * 3 + 2] = centers.data[idx * 3 + 2];
-        }
-        cartoonImage = newImage.reshape(3, src.rows);
+  centers.convertTo(centers, cv.CV_8U);
+  let newImage = new cv.Mat(src.rows * src.cols, 1, src.type());
+  for (let i = 0; i < labels.rows; i++) {
+    newImage.data[i * 3] = centers.data[labels.intAt(i, 0) * 3];
+    newImage.data[i * 3 + 1] = centers.data[labels.intAt(i, 0) * 3 + 1];
+    newImage.data[i * 3 + 2] = centers.data[labels.intAt(i, 0) * 3 + 2];
+  }
+  let cartoon = newImage.reshape(3, src.rows);
 
-        // --- Paint-like Smooth (Bilateral) ---
-        paintImage = new cv.Mat();
-        cv.bilateralFilter(cartoonImage, paintImage, 15, 100, 100);
+  // --- Paint-like (Bilateral filter on cartoon) ---
+  let paint = new cv.Mat();
+  cv.bilateralFilter(cartoon, paint, 15, 100, 100);
 
-        // Display Results
-        const outputDiv = document.getElementById('output');
-        outputDiv.innerHTML = "";
-        displayOutput(cartoonImage, 'Cartoon (Quantized)');
-        displayOutput(paintImage, 'Paint-like Smooth');
+  // Show results
+  cv.imshow("cartoonCanvas", cartoon);
+  cv.imshow("paintCanvas", paint);
 
-        // Cleanup
-        src.delete(); Z.delete(); labels.delete(); centers.delete();
-    });
+  // Enable download
+  function enableDownload(canvasId, linkId) {
+    let canvas = document.getElementById(canvasId);
+    let link = document.getElementById(linkId);
+    link.href = canvas.toDataURL("image/png");
+  }
+  enableDownload("cartoonCanvas", "downloadCartoon");
+  enableDownload("paintCanvas", "downloadPaint");
 
-    // Download Cartoon
-    document.getElementById("download-cartoon").onclick = function () {
-        saveMatAsImage(cartoonImage, "cartoon.png");
-    };
-
-    // Download Paint
-    document.getElementById("download-paint").onclick = function () {
-        saveMatAsImage(paintImage, "paint.png");
-    };
-
-    // Download ZIP
-    document.getElementById("download-zip").onclick = function () {
-        let zip = new JSZip();
-        zip.file("cartoon.png", matToBlob(cartoonImage), { binary: true });
-        zip.file("paint.png", matToBlob(paintImage), { binary: true });
-        zip.generateAsync({ type: "blob" }).then(function (content) {
-            saveAs(content, "cartoon_results.zip");
-        });
-    };
-
-    // --- Helpers ---
-    function displayOutput(mat, title) {
-        const outputDiv = document.getElementById('output');
-        const div = document.createElement('div');
-        div.style.display = "inline-block";
-        div.style.margin = "10px";
-
-        const h3 = document.createElement('h3');
-        h3.innerText = title;
-        const canvasOut = document.createElement('canvas');
-        cv.imshow(canvasOut, mat);
-
-        div.appendChild(h3);
-        div.appendChild(canvasOut);
-        outputDiv.appendChild(div);
-    }
-
-    function saveMatAsImage(mat, filename) {
-        const canvasTemp = document.createElement("canvas");
-        cv.imshow(canvasTemp, mat);
-        canvasTemp.toBlob(function (blob) {
-            saveAs(blob, filename);
-        });
-    }
-
-    function matToBlob(mat) {
-        const canvasTemp = document.createElement("canvas");
-        cv.imshow(canvasTemp, mat);
-        return atob(canvasTemp.toDataURL().split(',')[1]); // Base64 → binary
-    }
-};
+  // Cleanup
+  src.delete(); samples.delete(); labels.delete(); centers.delete();
+  cartoon.delete(); paint.delete(); newImage.delete();
+});
