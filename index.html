@@ -2,37 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>🎨 Cartoon + Paint Effect</title>
+  <title>Cartoon & Paint Effect</title>
   <link rel="stylesheet" href="style.css">
+  <script async src="opencv.js" onload="onOpenCvReady();"></script>
 </head>
 <body>
-  <h1>Cartoon + Paint-like Image Generator</h1>
+  <h1>🎨 Cartoon & Paint Effect</h1>
 
-  <!-- Upload Image -->
   <input type="file" id="upload" accept="image/*"><br><br>
+  <button id="generate">Generate Effects</button>
 
-  <!-- Original Preview -->
-  <canvas id="canvas"></canvas><br><br>
+  <div id="output">
+    <div>
+      <h3>Cartoon</h3>
+      <canvas id="cartoonCanvas"></canvas><br>
+      <a id="downloadCartoon" download="cartoon.png">⬇️ Download Cartoon</a>
+    </div>
 
-  <!-- Generate Button -->
-  <button id="generate" style="display:none;">Generate Cartoon & Paint</button><br><br>
-
-  <!-- Output Images -->
-  <div id="output"></div><br>
-
-  <!-- Download Buttons -->
-  <div class="buttons">
-    <button id="download-cartoon">Download Cartoon</button>
-    <button id="download-paint">Download Paint-like</button>
-    <button id="download-zip">Download Both (ZIP)</button>
+    <div>
+      <h3>Paint-like Smooth</h3>
+      <canvas id="paintCanvas"></canvas><br>
+      <a id="downloadPaint" download="paint.png">⬇️ Download Paint</a>
+    </div>
   </div>
 
-  <!-- JS Libraries -->
-  <script src="opencv.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <!-- Main Script -->
   <script src="script.js"></script>
 </body>
 </html>
